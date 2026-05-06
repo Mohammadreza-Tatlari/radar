@@ -1,3 +1,11 @@
+//The one thing to be careful about
+//The id field in your NODES config must exactly match the region label value in blackbox_targets.json.
+//Prometheus stores region="USA" and your PromQL filters by region="${region}" — 
+// if your config says id: "usa" but Prometheus has "USA", you'll get empty charts with no error message, which is hard to debug.
+//Always copy the region string from your JSON file directly into the config id field. Don't retype it from memory.
+
+
+
 // app/radar/page.tsx
 "use client";
 
@@ -11,6 +19,7 @@ export default function RadarPage() {
   const [selectedProtocol, setSelectedProtocol] = useState("http");
   const [selectedPhase,    setSelectedPhase]    = useState("tls");
   const [selectedRange,    setSelectedRange]    = useState(3600);
+  const [smoothing, setSmoothing] = useState<"none" | "spike" | "rolling">("spike");
 
   // When the user switches protocol, reset phase to that protocol's default
   const handleProtocolChange = (protocolId: string) => {
@@ -52,6 +61,29 @@ export default function RadarPage() {
                 {proto.label}
               </button>
             ))}
+
+            {/* Divider */}
+            <div className="w-px h-5 bg-gray-700" />
+
+            {/* Smoothing selector */}
+            {[
+              { id: "none",    label: "Raw"     },
+              { id: "spike",   label: "No spikes" },
+              { id: "rolling", label: "Smooth"  },
+            ].map(opt => (
+              <button
+                key={opt.id}
+                onClick={() => setSmoothing(opt.id as any)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  smoothing === opt.id
+                    ? "bg-gray-600 text-white"
+                    : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+
 
             {/* Divider */}
             <div className="w-px h-5 bg-gray-700" />
@@ -105,6 +137,7 @@ export default function RadarPage() {
               protocol={selectedProtocol}
               phase={selectedPhase || null}
               range={selectedRange}
+              smoothing={smoothing}
             />
           ))}
         </div>

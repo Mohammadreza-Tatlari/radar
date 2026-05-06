@@ -9,12 +9,14 @@ import { format } from "date-fns";
 import { useMetrics } from "@/hooks/useMetrics";
 import { DOMAIN_COLORS, DOMAINS, PROTOCOLS } from "@/config/radar";
 import type { MetricPoint } from "@/types/radar";
+import { removeSingleSampleSpikes, rollingAverage } from "@/lib/smoothing";
 
 type Props = {
   region:   string;
   protocol: string;
   phase?:   string | null;
   range:    number;
+  smoothing: "none" | "spike" | "rolling";
 };
 
 // ── Custom tooltip shown when hovering over the chart ─────────────────────
@@ -44,7 +46,7 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 // ── Main component ─────────────────────────────────────────────────────────
-export function RegionChart({ region, protocol, phase, range }: Props) {
+export function RegionChart({ region, protocol, phase, range, smoothing }: Props) {
   const { data, isLoading, isError } = useMetrics({ region, protocol, phase, range });
 
   const protocolConfig = PROTOCOLS.find(p => p.id === protocol);
@@ -83,14 +85,35 @@ export function RegionChart({ region, protocol, phase, range }: Props) {
     new Set(data?.domains.flatMap(d => d.data.map((p: MetricPoint) => p.timestamp)) ?? [])
   ).sort((a, b) => a - b);
 
+
   const chartData = allTimestamps.map(ts => {
     const point: Record<string, number> = { timestamp: ts };
+  
     data?.domains.forEach(domain => {
-      const match = domain.data.find((p: MetricPoint) => p.timestamp === ts);
+      // Apply smoothing per domain before adding to chart data
+      const rawData = domain.data as MetricPoint[];
+  
+      // if you want to tune it per-protocol (ICMP is noisier than HTTP), you can pass a custom threshold
+      const processedData =
+        smoothing === "spike"   ? removeSingleSampleSpikes(rawData, 3.5) :
+        smoothing === "rolling" ? rollingAverage(rawData, 3) :
+        rawData;  // "none" — raw data, no processing
+  
+      const match = processedData.find((p: MetricPoint) => p.timestamp === ts);
       if (match) point[domain.domainId] = parseFloat(match.value.toFixed(3));
     });
+  
     return point;
   });
+
+  // const chartData = allTimestamps.map(ts => {
+  //   const point: Record<string, number> = { timestamp: ts };
+  //   data?.domains.forEach(domain => {
+  //     const match = domain.data.find((p: MetricPoint) => p.timestamp === ts);
+  //     if (match) point[domain.domainId] = parseFloat(match.value.toFixed(3));
+  //   });
+  //   return point;
+  // });
 
   const hasData = chartData.length > 0;
 

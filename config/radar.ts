@@ -2,15 +2,19 @@
 
 export const NODES = [
     { id: "Local-Server", label: "Local Server", probe: "172.24.5.23:9115" },
-    { id: "Iran",         label: "Iran",          probe: "172.24.5.22:9115" },
+    { id: "Iran",         label: "Iran",         probe: "172.24.5.22:9115" },
+    { id: "USA",          label: "USA",          probe: "172.24.5.22:9115" },
+    { id: "Germany",      label: "Germany",      probe: "172.24.5.22:9115" },
+    { id: "France",       label: "France",       probe: "172.24.5.22:9115" },
+    //{ id: "USA",          label: "USA",           probe: "172.24.5.25:9115" }, // ← add this when new node is added in prometheus file_sd
   ] as const;
   
   export const DOMAINS = [
     { id: "github",    label: "GitHub",    http: "https://github.com",    icmp: "github.com",    tcp: "github.com:443"    },
     { id: "google",    label: "Google",    http: "https://google.com",    icmp: "google.com",    tcp: "google.com:443"    },
     { id: "chatgpt",   label: "ChatGPT",   http: "https://chatgpt.com",   icmp: "chatgpt.com",   tcp: "chatgpt.com:443"   },
-    { id: "soft98",    label: "Soft98",    http: "https://soft98.ir",     icmp: "soft98.ir",     tcp: "soft98.ir:443"     },
     { id: "wikipedia", label: "Wikipedia", http: "https://wikipedia.org", icmp: "wikipedia.org", tcp: "wikipedia.org:443" },
+    { id: "soft98",    label: "Soft98",    http: "https://soft98.ir",     icmp: "soft98.ir",     tcp: "soft98.ir:443"     },
   ] as const;
   
   export const PROTOCOLS = [
@@ -56,6 +60,6 @@ export const NODES = [
     github:    "#f59e0b",  // amber
     google:    "#eab308",  // yellow  
     chatgpt:   "#22c55e",  // green
-    soft98:    "#3b82f6",  // blue
     wikipedia: "#f97316",  // orange
+    soft98:    "#3b82f6",  // blue
   };
