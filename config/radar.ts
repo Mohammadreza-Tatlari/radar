@@ -26,7 +26,7 @@ export const NODES = [
       // HTTP has phases: connect, tls, processing, transfer, resolve
       // we default to "tls" to match your Grafana dashboard
       defaultPhase: "tls",
-      phases: ["connect", "tls", "processing", "transfer", "resolve"],
+      //phases: ["connect", "tls", "processing", "transfer", "resolve"],
       unit:   "ms",
     },
     {
@@ -38,20 +38,20 @@ export const NODES = [
       phases: [],
       unit:   "ms",
     },
-    {
-      id:     "tcp",
-      label:  "TCP Connect",
-      job:    "blackbox-tcp",
-      metric: "probe_duration_seconds",
-      defaultPhase: null,   // no phase label for TCP
-      phases: [],
-      unit:   "ms",
-    },
+    // {
+    //   id:     "tcp",
+    //   label:  "TCP Connect",
+    //   job:    "blackbox-tcp",
+    //   metric: "probe_duration_seconds",
+    //   defaultPhase: null,   // no phase label for TCP
+    //   phases: [],
+    //   unit:   "ms",
+    // },
   ] as const;
   
   export const TIME_RANGES = [
     { label: "Last 1h",  seconds: 3600,  step: "30s" },
-    { label: "Last 6h",  seconds: 21600, step: "2m"  },
+    //{ label: "Last 6h",  seconds: 21600, step: "2m"  },
     { label: "Last 24h", seconds: 86400, step: "10m" },
   ] as const;
   

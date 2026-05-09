@@ -1,34 +1,32 @@
-//The one thing to be careful about
-//The id field in your NODES config must exactly match the region label value in blackbox_targets.json.
-//Prometheus stores region="USA" and your PromQL filters by region="${region}" — 
-// if your config says id: "usa" but Prometheus has "USA", you'll get empty charts with no error message, which is hard to debug.
-//Always copy the region string from your JSON file directly into the config id field. Don't retype it from memory.
-
-
-
 // app/radar/page.tsx
 "use client";
 
 import { useState } from "react";
 import { NODES, PROTOCOLS, TIME_RANGES } from "@/config/radar";
 import { RegionChart } from "@/components/radar/RegionChart";
+import { DatePicker }  from "@/components/radar/DatePicker";
+import { jalaliDayToTimeRange, toJalali, type JalaliDate } from "@/lib/jalali";
 
 export default function RadarPage() {
-
-  // These three pieces of state control what all charts show simultaneously
   const [selectedProtocol, setSelectedProtocol] = useState("http");
   const [selectedPhase,    setSelectedPhase]    = useState("tls");
   const [selectedRange,    setSelectedRange]    = useState(3600);
-  const [smoothing, setSmoothing] = useState<"none" | "spike" | "rolling">("spike");
+  const [smoothing,        setSmoothing]        = useState<"none"|"spike"|"rolling">("spike");
+  const [pickedDate,       setPickedDate]        = useState<JalaliDate | null>(null);
 
-  // When the user switches protocol, reset phase to that protocol's default
   const handleProtocolChange = (protocolId: string) => {
     setSelectedProtocol(protocolId);
     const proto = PROTOCOLS.find(p => p.id === protocolId);
-    setSelectedPhase(proto?.defaultPhase ?? "");
+    setSelectedPhase(proto?.defaultPhase ?? "tls");
   };
 
   const activeProtocol = PROTOCOLS.find(p => p.id === selectedProtocol);
+
+  // When a date is picked, compute its full-day window once here
+  // and pass it down to all charts — avoids recomputing in each chart
+  const timeWindow = pickedDate
+    ? jalaliDayToTimeRange(pickedDate)
+    : null;
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
@@ -44,8 +42,15 @@ export default function RadarPage() {
             </p>
           </div>
 
-          {/* Controls */}
           <div className="flex flex-wrap items-center gap-2">
+
+            {/* Date picker — always visible */}
+            <DatePicker
+              value={pickedDate}
+              onChange={setPickedDate}
+            />
+
+            <div className="w-px h-5 bg-gray-700" />
 
             {/* Protocol selector */}
             {PROTOCOLS.map(proto => (
@@ -62,34 +67,11 @@ export default function RadarPage() {
               </button>
             ))}
 
-            {/* Divider */}
             <div className="w-px h-5 bg-gray-700" />
 
-            {/* Smoothing selector */}
-            {[
-              { id: "none",    label: "Raw"     },
-              { id: "spike",   label: "No spikes" },
-              { id: "rolling", label: "Smooth"  },
-            ].map(opt => (
-              <button
-                key={opt.id}
-                onClick={() => setSmoothing(opt.id as any)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  smoothing === opt.id
-                    ? "bg-gray-600 text-white"
-                    : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-
-
-            {/* Divider */}
-            <div className="w-px h-5 bg-gray-700" />
-
-            {/* Phase selector — only shown for HTTP */}
-            {activeProtocol && activeProtocol.phases.length > 0 && (
+            {/* If you want to add monitoring the phases of HTTPS you can simply uncomment this section */}
+            {/* Phase selector — HTTP only */}
+            {/* {activeProtocol && activeProtocol.phases.length > 0 && (
               <>
                 {activeProtocol.phases.map(ph => (
                   <button
@@ -106,20 +88,44 @@ export default function RadarPage() {
                 ))}
                 <div className="w-px h-5 bg-gray-700" />
               </>
+            )} */}
+
+            {/* Time range buttons — only shown in live mode (no date picked) */}
+            {!pickedDate && (
+              <>
+                {TIME_RANGES.map(tr => (
+                  <button
+                    key={tr.seconds}
+                    onClick={() => setSelectedRange(tr.seconds)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      selectedRange === tr.seconds
+                        ? "bg-gray-600 text-white"
+                        : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200"
+                    }`}
+                  >
+                    {tr.label}
+                  </button>
+                ))}
+                <div className="w-px h-5 bg-gray-700" />
+              </>
             )}
 
-            {/* Time range selector */}
-            {TIME_RANGES.map(tr => (
+            {/* Smoothing selector */}
+            {[
+              { id: "none",    label: "Raw"       },
+              //{ id: "spike",   label: "No spikes" },
+              { id: "rolling", label: "Smooth"    },
+            ].map(opt => (
               <button
-                key={tr.seconds}
-                onClick={() => setSelectedRange(tr.seconds)}
+                key={opt.id}
+                onClick={() => setSmoothing(opt.id as any)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  selectedRange === tr.seconds
+                  smoothing === opt.id
                     ? "bg-gray-600 text-white"
                     : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200"
                 }`}
               >
-                {tr.label}
+                {opt.label}
               </button>
             ))}
 
@@ -136,8 +142,12 @@ export default function RadarPage() {
               region={node.id}
               protocol={selectedProtocol}
               phase={selectedPhase || null}
-              range={selectedRange}
               smoothing={smoothing}
+              // Pass either window mode or range mode depending on date picker state
+              {...(timeWindow
+                ? { mode: "window" as const, start: timeWindow.start, end: timeWindow.end }
+                : { mode: "range"  as const, range: selectedRange }
+              )}
             />
           ))}
         </div>

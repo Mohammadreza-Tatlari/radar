@@ -11,13 +11,9 @@ import { DOMAIN_COLORS, DOMAINS, PROTOCOLS } from "@/config/radar";
 import type { MetricPoint } from "@/types/radar";
 import { removeSingleSampleSpikes, rollingAverage } from "@/lib/smoothing";
 
-type Props = {
-  region:   string;
-  protocol: string;
-  phase?:   string | null;
-  range:    number;
-  smoothing: "none" | "spike" | "rolling";
-};
+type Props =
+  | { region: string; protocol: string; phase?: string | null; smoothing: "none"|"spike"|"rolling"; mode: "range";  range: number }
+  | { region: string; protocol: string; phase?: string | null; smoothing: "none"|"spike"|"rolling"; mode: "window"; start: number; end: number };
 
 // ── Custom tooltip shown when hovering over the chart ─────────────────────
 // Recharts passes its own props here — we type them loosely to keep it simple
@@ -46,8 +42,27 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 // ── Main component ─────────────────────────────────────────────────────────
-export function RegionChart({ region, protocol, phase, range, smoothing }: Props) {
-  const { data, isLoading, isError } = useMetrics({ region, protocol, phase, range });
+export function RegionChart(props: Props) {
+  const { region, protocol, phase, smoothing } = props;
+
+  const { data, isLoading, isError } = useMetrics(
+    props.mode === "range"
+      ? {
+          region: props.region,
+          protocol: props.protocol,
+          phase: props.phase,
+          mode: "range",
+          range: props.range,
+        }
+      : {
+          region: props.region,
+          protocol: props.protocol,
+          phase: props.phase,
+          mode: "window",
+          start: props.start,
+          end: props.end,
+        }
+  );
 
   const protocolConfig = PROTOCOLS.find(p => p.id === protocol);
 

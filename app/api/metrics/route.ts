@@ -18,19 +18,14 @@ export async function GET(request: NextRequest) {
   const protocolId = searchParams.get("protocol");
   const phase    = searchParams.get("phase");     // only used for http, null for others
   const rangeRaw = searchParams.get("range");     // seconds as a string, e.g. "3600"
+  const startRaw   = searchParams.get("start");  
+  const endRaw     = searchParams.get("end");    
+
 
   // Basic validation — return a clear error if something is missing
-  if (!region || !protocolId || !rangeRaw) {
+  if (!region || !protocolId) {
     return Response.json(
-      { error: "Missing required parameters: region, protocol, range" },
-      { status: 400 }
-    );
-  }
-
-  const rangeSeconds = parseInt(rangeRaw, 10);
-  if (isNaN(rangeSeconds)) {
-    return Response.json(
-      { error: "range must be a number" },
+      { error: "Missing required parameters: region, protocol" },
       { status: 400 }
     );
   }
@@ -44,15 +39,53 @@ export async function GET(request: NextRequest) {
     );
   }
 
+
+
   // ── 3. Build time window ───────────────────────────────────────────────────
-  const now   = Math.floor(Date.now() / 1000);  // current Unix timestamp in seconds
-  const start = now - rangeSeconds;
+// Two modes:
+//  1. Explicit start/end (user picked a date from the calendar)
+//  2. Range-from-now (user selected Last 1h / 6h / 24h)
+let start: number;
+let end:   number;
+let rangeSeconds: number;
+
+if (startRaw && endRaw) {
+  start = parseInt(startRaw, 10);
+  end   = parseInt(endRaw,   10);
+  if (isNaN(start) || isNaN(end)) {
+    return Response.json({ error: "start/end must be numbers" }, { status: 400 });
+  }
+  if (end <= start) {
+    return Response.json({ error: "end must be greater than start" }, { status: 400 });
+  }
+  rangeSeconds = end - start;
+} else if (rangeRaw) {
+  const parsedRangeSeconds = parseInt(rangeRaw, 10);
+  if (isNaN(parsedRangeSeconds)) {
+    return Response.json({ error: "range must be a number" }, { status: 400 });
+  }
+  end   = Math.floor(Date.now() / 1000);
+  start = end - parsedRangeSeconds;
+  rangeSeconds = end - start;
+} else {
+  return Response.json(
+    { error: "Provide either range or both start and end" },
+    { status: 400 }
+  );
+}
+
+// Step size scales with the window duration
+//const duration = end - start;
+///const step = duration <= 3600 ? "30s" : duration <= 21600 ? "2m" : "10m";
+  // ── 3. Build time window ───────────────────────────────────────────────────
+  //const now   = Math.floor(Date.now() / 1000);  // current Unix timestamp in seconds
+  //const start = now - rangeSeconds;
 
   // Step size: we pick it based on range to avoid returning too many data points
   // 1h → 30s steps = 120 points per domain (fine)
   // 6h → 2m steps  = 180 points per domain (fine)
   // 24h → 10m steps = 144 points per domain (fine)
-  const step = rangeSeconds <= 3600 ? "30s" : rangeSeconds <= 21600 ? "2m" : "10m";
+  //const step = rangeSeconds <= 3600 ? "30s" : rangeSeconds <= 21600 ? "2m" : "10m";
 
   // ── 4. Query Prometheus for each domain ────────────────────────────────────
   const prometheusUrl = process.env.PROMETHEUS_URL;
@@ -90,8 +123,11 @@ export async function GET(request: NextRequest) {
       const url = new URL(`${prometheusUrl}/api/v1/query_range`);
       url.searchParams.set("query", query);
       url.searchParams.set("start", String(start));
-      url.searchParams.set("end",   String(now));
+      const duration = end - start;
+      const step = duration <= 3600 ? "30s" : duration <= 21600 ? "2m" : "10m";
+      url.searchParams.set("end",   String(end));
       url.searchParams.set("step",  step);
+      // Step size scales with the window duration
 
       try {
         const res = await fetch(url.toString(), {
