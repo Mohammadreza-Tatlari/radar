@@ -11,7 +11,7 @@ export default function RadarPage() {
   const [selectedProtocol, setSelectedProtocol] = useState("http");
   const [selectedPhase,    setSelectedPhase]    = useState("tls");
   const [selectedRange,    setSelectedRange]    = useState(3600);
-  const [smoothing,        setSmoothing]        = useState<"none"|"spike"|"rolling">("spike");
+  const [smoothing,        setSmoothing]        = useState<"none"|"spike"|"rolling">("rolling");
   const [pickedDate,       setPickedDate]        = useState<JalaliDate | null>(null);
 
   const handleProtocolChange = (protocolId: string) => {
@@ -135,7 +135,7 @@ export default function RadarPage() {
 
       {/* ── Chart grid ────────────────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-1 gap-4">  {/* change xl:grid-cols-2 if you want tables to be side by side*/}
           {NODES.map(node => (
             <RegionChart
               key={node.id}

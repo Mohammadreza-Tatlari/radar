@@ -1,6 +1,41 @@
 // lib/smoothing.ts
 
 import type { MetricPoint } from "@/types/radar";
+import { PROBE_TIMEOUT_MS } from "@/config/radar";
+
+/**
+ * Marks data points above the timeout threshold as failures.
+ * Returns the cleaned series (timeouts removed) and a failure summary.
+ *
+ * Instead of removing points entirely (which would cause connectNulls
+ * to bridge the gap), we return them as null so Recharts draws a gap.
+ */
+export type ProcessedSeries = {
+  cleaned: (MetricPoint | null)[];  // null = failed probe
+  failureRate: number;               // 0.0 to 1.0
+  isFullyDown: boolean;              // true if >80% of points are failures
+};
+
+
+export function filterTimeouts(points: MetricPoint[]): ProcessedSeries {
+  if (points.length === 0) {
+    return { cleaned: [], failureRate: 0, isFullyDown: false };
+  }
+
+  const cleaned = points.map(p =>
+    p.value >= PROBE_TIMEOUT_MS ? null : p
+  );
+
+  const failureCount = cleaned.filter(p => p === null).length;
+  const failureRate  = failureCount / points.length;
+
+  return {
+    cleaned,
+    failureRate,
+    isFullyDown: failureRate > 0.8,
+  };
+}
+
 
 /**
  * Calculates the median of an array of numbers.

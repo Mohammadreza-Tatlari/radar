@@ -2,8 +2,8 @@
 
 export const NODES = [
     { id: "Local-Server", label: "Local Server", probe: "172.24.5.23:9115" },
+    { id: "Lotus",        label: "Lotus",        probe: process.env.LOTUS_IP },
     { id: "Iran",         label: "Iran",         probe: "172.24.5.22:9115" },
-    { id: "USA",          label: "USA",          probe: "172.24.5.22:9115" },
     { id: "Germany",      label: "Germany",      probe: "172.24.5.22:9115" },
     { id: "France",       label: "France",       probe: "172.24.5.22:9115" },
     //{ id: "USA",          label: "USA",           probe: "172.24.5.25:9115" }, // ← add this when new node is added in prometheus file_sd
@@ -63,3 +63,5 @@ export const NODES = [
     wikipedia: "#f97316",  // orange
     soft98:    "#3b82f6",  // blue
   };
+
+  export const PROBE_TIMEOUT_MS = 4000; // 4 seconds — safely below the 4500ms exporter max

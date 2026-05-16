@@ -13,6 +13,15 @@ export type MetricPoint = {
     data: MetricPoint[];
   };
   
+  // Add to types/radar.ts
+  export type DomainStatus = {
+    domainId:    string;
+    domainLabel: string;
+    failureRate: number;    // 0.0 to 1.0
+    isFullyDown: boolean;
+    lastValue:   number | null;  // null if last probe was a timeout
+  };
+
   // What the full API response looks like
   export type MetricsResponse = {
     region: string;
