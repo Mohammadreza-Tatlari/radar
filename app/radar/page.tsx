@@ -36,7 +36,7 @@ export default function RadarPage() {
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center gap-4">
 
           <div className="flex-1">
-            <h1 className="text-lg font-semibold">Network Radar</h1>
+            <h1 className="text-lg font-semibold">Tebyan Radar</h1>
             <p className="text-xs text-gray-500 mt-0.5">
               Live probe results from {NODES.length} regions
             </p>

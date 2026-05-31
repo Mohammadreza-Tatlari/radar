@@ -1,11 +1,12 @@
 // config/radar.ts
 
 export const NODES = [
-    { id: "Local-Server", label: "Local Server", probe: "172.24.5.23:9115" },
-    { id: "Lotus",        label: "Lotus",        probe: process.env.LOTUS_IP },
-    { id: "Iran",         label: "Iran",         probe: "172.24.5.22:9115" },
-    { id: "Germany",      label: "Germany",      probe: "172.24.5.22:9115" },
-    { id: "France",       label: "France",       probe: "172.24.5.22:9115" },
+    { id: "TebyanIDC",    label: "Local Server",  probe: "172.24.5.23:9115" },
+    { id: "FanavaDC",     label: "Fanava DC",     probe: process.env.LOTUS_IP },
+    { id: "TCI",          label: "TCI",           probe: process.env.GREEN_IP },
+    { id: "Parspack",     label: "Parspack",      probe: process.env.PARSPACK_IP },
+    { id: "Iran",         label: "Iran",          probe: "172.24.5.22:9115" },
+
     //{ id: "USA",          label: "USA",           probe: "172.24.5.25:9115" }, // ← add this when new node is added in prometheus file_sd
   ] as const;
   
@@ -51,8 +52,8 @@ export const NODES = [
   
   export const TIME_RANGES = [
     { label: "Last 1h",  seconds: 3600,  step: "30s" },
-    //{ label: "Last 6h",  seconds: 21600, step: "2m"  },
     { label: "Last 24h", seconds: 86400, step: "10m" },
+    { label: "Last 2d",  seconds: 172800, step: "2m"  },
   ] as const;
   
   // These match your Grafana line colors as closely as possible
